@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gw:digitalPkg xmlns:gw="http://gawati.org/ns/1.0">
+    <gw:aknMetadata uri="/akn/mu/act/2004-04-30/bill_no_11-2004/eng@/!main" href="./akn_mu_act_2004-04-30_bill_no_11-2004_eng_main.xml" />
+    <gw:digitalArtifacts>
+        <gw:digitalArtifact format="pdf" href="./akn_mu_act_2004-04-30_bill_no_11-2004_eng_main.pdf" />
+    </gw:digitalArtifacts>
+</gw:digitalPkg>
