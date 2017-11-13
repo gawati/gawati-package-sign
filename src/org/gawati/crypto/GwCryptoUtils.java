@@ -39,15 +39,7 @@ public class GwCryptoUtils {
 		// default constructor
 	}
 	
-	/**
-	 * Path to key store folder 
-	 * @return
-	 */
-	public String getKeyStorePath(){
-		return System.getProperty("user.dir") + 
-				File.separator + 
-					"keys";
-	}
+
 	
 	/**
 	 * Read Private Key from storage

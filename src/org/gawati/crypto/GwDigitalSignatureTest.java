@@ -24,6 +24,7 @@ public class GwDigitalSignatureTest {
 	String sPathFileToSign = "";
 	String sPathDetachedSignature = "";
 	String sPublicKey = "";
+	String sKeyFolder = System.getProperty("user.dir") + File.separator + "test_keys";
 
 	public GwDigitalSignatureTest() throws NoSuchAlgorithmException {
 
@@ -34,7 +35,7 @@ public class GwDigitalSignatureTest {
 		gwkpg.generateKeyPair();
 		System.out.println(" OUT = " + gwkpg);
 		try {
-			gwkpg.serializeKeyPair();
+			gwkpg.serializeKeyPair(sKeyFolder);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}		
@@ -49,7 +50,7 @@ public class GwDigitalSignatureTest {
 		gwDS = new GwDigitalSignature();
 		sPathFileToSign = testDataPath() + File.separator + "akn_mu_act_2004-04-30_bill_no_11-2004_eng_main.xml";
 		sPathDetachedSignature = testDataPath() + File.separator + "akn_mu_act_2004-04-30_bill_no_11-2004_eng_main.sig";
-		sPublicKey = System.getProperty("user.dir") + File.separator + "keys" + File.separator + "id.public";
+		sPublicKey = System.getProperty("user.dir") + File.separator + "test_keys" + File.separator + "id.public";
 	}
 
 	@After

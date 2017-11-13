@@ -77,12 +77,12 @@ public class GwKeyPairManager {
 	
 	/**
 	 * Save the Key Pair into the Keys folder
+	 * This is used only for the Unit test
 	 * @throws IOException
 	 */
-	public void serializeKeyPair() throws IOException {
+	public void serializeKeyPair(String sKeyFolder) throws IOException {
 		if (theKeyPair != null) {
 			GwCryptoUtils utils = new GwCryptoUtils();
-			String sKeyFolder = utils.getKeyStorePath();
 			File keyFolder = new File(sKeyFolder);
 			if (!(keyFolder).exists()) {
 				keyFolder.mkdirs();

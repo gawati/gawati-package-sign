@@ -185,13 +185,7 @@ public class GwDigitalSignature {
         return signature;
 	}
 	
-	private Document detachedSignatureDocument() throws ParserConfigurationException {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-    	dbf.setNamespaceAware(true); // must be set
-    	Document doc = dbf.newDocumentBuilder().newDocument();
-    	return doc;
-	}
-	
+
 	private void writeSignature(String sPathDetachedSignature, Document docDetachedSignature) throws FileNotFoundException, TransformerException {
     	OutputStream os = new FileOutputStream(sPathDetachedSignature);
     	TransformerFactory tf = TransformerFactory.newInstance();
@@ -199,14 +193,5 @@ public class GwDigitalSignature {
     	trans.transform(new DOMSource(docDetachedSignature), new StreamResult(os)); 	    
 	}
 	
-	private Document documentToBeSigned(String originalXmlFilePath) throws FileNotFoundException, SAXException, IOException, ParserConfigurationException {
-		GwCryptoUtils utils = new GwCryptoUtils();
-		Document doc = utils.getXmlDocument(originalXmlFilePath);
-		return doc;
-	}
-	
-
-	
-
 	
 }
