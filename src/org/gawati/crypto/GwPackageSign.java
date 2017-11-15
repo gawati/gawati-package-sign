@@ -26,14 +26,42 @@ public class GwPackageSign {
 	
 	GwCryptoUtils theUtils = new GwCryptoUtils();
 
-	private boolean signAknMetadata(GwAknMetadata gwMeta) {
+	private boolean signAknMetadata(Document doc, String sPathToSignedPackage, GwKeyPairManager kpm, GwPackageFile pkg) {
+		
+		// get dom doc of akn metadata
+		GwAknMetadata aknMeta = pkg.getPackageInfo();
+		
+		// path to aknmeta file to be signed
+		Path pAknMetaPath = Paths.get(pkg.getPackageFileFolder(), aknMeta.folderPath, aknMeta.fileName);
+		
+		// path to new aknmeta file which has been signed
+		String sFolderSignedPackage = theUtils.packageFolder(sPathToSignedPackage);
+		Path pAknMetaPathSigned = Paths.get(sFolderSignedPackage, aknMeta.folderPath, aknMeta.fileName);
+		
+		
+		//Path pSignedAknMetaPath = Paths.get(uri)
+		//Document docAknMeta = theUtils.getXmlDocument(pAknMetaPath.toString());
+		
+		
+		// sign dom package in target path
+		
+	
+		
 		return false;
 	}
 	
-	private boolean signDigitalArtifacts(GwAknMetadata gwMeta) {
+	private boolean signDigitalArtifacts(Document doc, String sPathToSignedPackage, GwKeyPairManager kpm, GwPackageFile pkg) {
 		return false;
 	}
 	
+	/**
+	 * Signs a package and outputs signed package to a different package
+	 * @param sPackageToSign path to pkg.xml
+	 * @param sPathtoSignedPackage path to output pkg.xml
+	 * @param kpm Key pair info
+	 * @return
+	 * @throws Exception
+	 */
 	public boolean packageSign(
 			String sPackageToSign, 
 			String sPathtoSignedPackage, 
@@ -49,20 +77,16 @@ public class GwPackageSign {
 		if (!isSigned) {
 			throw new Exception("File is already signed");
 		}
-		GwPackageFile gwPkgFile = new GwPackageFile(docPackageToSign);
-		GwAknMetadata gwMeta = gwPkgFile.getPackageInfo();
+		
+		GwPackageFile gwPkgFile = new GwPackageFile(sPackageToSign, docPackageToSign);
+		//GwAknMetadata gwMeta = gwPkgFile.getPackageInfo();
 		//sign metadata
-		signAknMetadata(gwMeta);
-		signDigitalArtifacts(gwMeta);
+		signAknMetadata(docPackageToSign, sPathtoSignedPackage, kpm, gwPkgFile);
+		signDigitalArtifacts(docPackageToSign, sPathtoSignedPackage, kpm, gwPkgFile);
 
 		return isSigned;
 	}
 	
 
-	public static void main(String[] args) {
-		Path path1 = Paths.get("C:\\Users\\Java\\examples");
-		// Output is C:\Users\Java\examples\Test.java
-		System.out.println(path1.resolve("./Test.java"));
-	}
 	
 }

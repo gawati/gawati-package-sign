@@ -123,5 +123,12 @@ public class GwCryptoUtils {
         logg.log(Level.INFO, "root element = " + doc.getDocumentElement().getNodeName());
 	    return doc;
 	}
+	
+	public String packageFolder(String sPathToPackage) {
+		File f = new File(sPathToPackage);
+		String sParentFolder = f.getParent();
+		return sParentFolder;
+		
+	}
 
 }

@@ -38,29 +38,37 @@ public class GwPackageFile {
 	 *
 	 */
 	public class GwAknMetadata {
-		String uri;
-		String fileName;
-		String folderPath;
-		List<GwAknArtifact> artifacts ;
+		public String uri;
+		public String fileName;
+		public String folderPath;
+		public List<GwAknArtifact> artifacts ;
 		
 		public GwAknMetadata() {
 			artifacts = new ArrayList<>(0);
 		}
 		
+		public String relativeFilePath() {
+			return folderPath + File.separator + fileName;
+		}
+		
 	};
 	
 	public class GwAknArtifact {
-		String format;
-		String fileName;
-		String folderPath;
+		public String format;
+		public String fileName;
+		public String folderPath;
 	};
 	
 	String thePackageFileFolder ;
+	String thePackageFile;
 	GwAknMetadata theAknMetadata;
 	GwCryptoUtils theUtils = new GwCryptoUtils();
 	
-	public GwPackageFile(Document docPackageToSign) throws Exception {
+	public GwPackageFile(String sPackageFilePath, Document docPackageToSign) throws Exception {
 		theAknMetadata = new GwAknMetadata();
+		File fPkg = new File(sPackageFilePath);
+		thePackageFile = fPkg.getName();
+		thePackageFileFolder = fPkg.getParent();
 		// load the POJOs
 		try {
 			loadAknMetadataFromPackage(docPackageToSign);
@@ -69,6 +77,14 @@ public class GwPackageFile {
 		}
 	}
 
+	
+	public String getPackageFile() {
+		return thePackageFile;
+	}
+	
+	public String getPackageFileFolder(){
+		return thePackageFileFolder;
+	}
 	
 	public GwAknMetadata getPackageInfo() {
 		return theAknMetadata;
