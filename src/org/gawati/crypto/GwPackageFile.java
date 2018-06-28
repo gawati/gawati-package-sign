@@ -130,7 +130,7 @@ public class GwPackageFile {
 		 }
 	}
 	
-	public static void main(String[] args) throws Exception {
+	/*public static void main(String[] args) throws Exception {
 		GwPackageFile pkg = new GwPackageFile("D:\\develop\\gawati-pkg-sign\\test_data\\pkg.xml");
-	}
+	}*/
 }
