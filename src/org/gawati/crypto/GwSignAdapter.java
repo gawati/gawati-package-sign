@@ -2,6 +2,7 @@ package org.gawati.crypto;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -22,6 +23,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
+import org.apache.commons.io.FilenameUtils;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -29,9 +31,7 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 @Path("/doc")
 public class GwSignAdapter {
 	private String thisClassName = GwSignAdapter.class.getName();
-	
-	private static final Logger log = 
-			 Logger.getLogger(GwSignAdapter.class.getName());
+	private static final Logger log = Logger.getLogger(GwSignAdapter.class.getName());
 	
 	GwDigitalSignature gwDS = null;
 	Double randomNum ; 
@@ -54,8 +54,40 @@ public class GwSignAdapter {
 		}
 	}
 	
-	private String testDataPath(){ 
-		return System.getProperty("user.dir") + File.separator + "test_data" ;
+	private String tmpDataPath(){
+		String tmpDirPath = System.getProperty("user.dir") + File.separator + "tmp_data";
+		File tmpDir = new File(tmpDirPath);
+		if (!tmpDir.exists()) tmpDir.mkdirs();
+		return tmpDirPath;
+	}
+
+	private String getSigPath(String ipFilename) {
+		return tmpDataPath() + File.separator + FilenameUtils.getBaseName(ipFilename) + ".sig";
+	}
+
+	private String getKeysPath() {
+		return System.getProperty("user.dir") + File.separator + "test_keys";
+	}
+
+	// Saves uploaded file to path
+	private void writeToFile(InputStream ipStream, String ipPath) {
+		try {
+			OutputStream out = new FileOutputStream(new File(
+					ipPath));
+			int read = 0;
+			byte[] bytes = new byte[1024];
+
+			out = new FileOutputStream(new File(ipPath));
+			while ((read = ipStream.read(bytes)) != -1) {
+				out.write(bytes, 0, read);
+			}
+			out.flush();
+			out.close();
+		} catch (IOException e) {
+
+			e.printStackTrace();
+		}
+
 	}
 	
 	@POST
@@ -66,37 +98,36 @@ public class GwSignAdapter {
 		FormDataBodyPart filePart = formData.getField("input_file");
 		ContentDisposition fileHeader = filePart.getContentDisposition();
 		String fileName = fileHeader.getFileName();
-        String reply = "File confirmed: " + fileName;
         
-        InputStream readFormStream = filePart.getValueAs(InputStream.class);
-        
-//		final InputStream isFile =  new ByteArrayInputStream(input_file.getBytes(StandardCharsets.UTF_8));
-		
+        String sPathFileToSign = tmpDataPath() + File.separator + fileName;
+        final InputStream ipStream = filePart.getValueAs(InputStream.class);
+		writeToFile(ipStream, sPathFileToSign);
+
+		String sKeyFolder = getKeysPath();
+		String sPathDetachedSignature = getSigPath(sPathFileToSign);
+		log.info("Sig filepath: " + sPathDetachedSignature + " | Keys Path: " + sKeyFolder);
+
 		StreamingOutput stream =  new StreamingOutput(){
 
 			@Override
 			public void write(OutputStream out) throws IOException, WebApplicationException {
 				try {
-//					String sKeyFolder = System.getProperty("user.dir") + File.separator + "test_keys";
-//					String sPathFileToSign = testDataPath() + File.separator + "akn_mu_act_2004-04-30_bill_no_11-2004_eng_main.xml";
-					String sPathDetachedSignature = testDataPath() + File.separator + "akn_mu_act_2004-04-30_bill_no_11-2004_eng_main.sig";
-//
-//					GwKeyPairManager gwkpg = new GwKeyPairManager();
-//					gwkpg.generateKeyPair();
-//					try {
-//						gwkpg.serializeKeyPair(sKeyFolder);
-//					} catch (IOException e) {
-//						e.printStackTrace();
-//					}	
-//					gwDS.generateDigitalSignature(sPathFileToSign, sPathDetachedSignature, gwkpg);
-					System.out.println(" Signed = " + fileName);
+					GwKeyPairManager gwkpg = new GwKeyPairManager();
+					gwkpg.generateKeyPair();
+					try {
+						gwkpg.serializeKeyPair(sKeyFolder);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					gwDS.generateDigitalSignature(sPathFileToSign, sPathDetachedSignature, gwkpg);
+					out.write(String.format("Signed file at: %s\n", sPathDetachedSignature).getBytes());
+					out.flush();
 				} catch(Exception e){
 					throw new WebApplicationException(e);
 				}
 			}
 		};
-		return Response.ok(reply).build();
-//		return Response.ok(stream).build();
+		return Response.ok(stream).build();
 	}	
 	
 	@GET
