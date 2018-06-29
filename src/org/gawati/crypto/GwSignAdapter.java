@@ -27,6 +27,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 @Path("/doc")
 public class GwSignAdapter {
@@ -73,6 +75,10 @@ public class GwSignAdapter {
 		return System.getProperty("user.dir") + File.separator + "test_keys";
 	}
 
+	private String getPublicKeyPath() {
+		return getKeysPath() + File.separator + "id.public";
+	}
+
 	// Saves uploaded file to path
 	private void writeToFile(InputStream ipStream, String ipPath) {
 		try {
@@ -106,7 +112,7 @@ public class GwSignAdapter {
         String sPathFileToSign = getFileToSignPath(ipFilename);
 		String sKeyFolder = getKeysPath();
 		String sPathDetachedSignature = getSigPath(sPathFileToSign);
-		log.info("Sig filepath: " + sPathDetachedSignature + " | Keys Path: " + sKeyFolder);
+		log.info("Sign: " + ipFilename);
 
 		try {
 			writeToFile(ipStream, sPathFileToSign);
@@ -125,7 +131,34 @@ public class GwSignAdapter {
 		return Response.ok(new File(sPathDetachedSignature), MediaType.APPLICATION_OCTET_STREAM)
 	            .header("content-disposition", "attachment; filename = "+ FilenameUtils.getName(sPathDetachedSignature))
 	            .build();
-	}	
+	}
+
+	@POST
+	@Path("/validate")
+	@Produces(MediaType.TEXT_PLAIN)
+	@Consumes(MediaType.MULTIPART_FORM_DATA)
+	public Response restValidate(FormDataMultiPart formData) throws IOException, WebApplicationException, JSONException {
+		FormDataBodyPart sigFilePart = formData.getField("sig_file");
+		String sigFilename = sigFilePart.getContentDisposition().getFileName();
+		final InputStream sigStream = sigFilePart.getValueAs(InputStream.class);
+
+		String sPathDetachedSignature = getSigPath(sigFilename);
+		String sPublicKey = getPublicKeyPath();
+		log.info("Validate: " + sigFilename);
+
+		JSONObject valid = new JSONObject();
+		valid.put("valid", false);
+
+		try {
+			writeToFile(sigStream, sPathDetachedSignature);
+			boolean v = gwDS.validateDigitalSignature(sPathDetachedSignature, sPublicKey);
+			log.info("Valid = " + v);
+			valid.put("valid", v);
+		} catch(Exception e){
+			throw new WebApplicationException(e);
+		}
+		return Response.ok(valid.toString()).build();
+	}
 	
 	@GET
 	@Path("/test")
