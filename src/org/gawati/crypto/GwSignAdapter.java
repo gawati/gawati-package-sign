@@ -61,6 +61,10 @@ public class GwSignAdapter {
 		return tmpDirPath;
 	}
 
+	private String getFileToSignPath(String filename) {
+		 return tmpDataPath() + File.separator + filename;
+	}
+
 	private String getSigPath(String ipFilename) {
 		return tmpDataPath() + File.separator + FilenameUtils.getBaseName(ipFilename) + ".sig";
 	}
@@ -87,47 +91,40 @@ public class GwSignAdapter {
 
 			e.printStackTrace();
 		}
-
 	}
 	
 	@POST
 	@Path("/sign")
-	@Produces(MediaType.TEXT_XML)
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
-	public Response restApplySign(FormDataMultiPart formData) throws IOException {
+	public Response restApplySign(FormDataMultiPart formData) throws IOException, WebApplicationException {
 		FormDataBodyPart filePart = formData.getField("input_file");
 		ContentDisposition fileHeader = filePart.getContentDisposition();
-		String fileName = fileHeader.getFileName();
+		String ipFilename = fileHeader.getFileName();
+		final InputStream ipStream = filePart.getValueAs(InputStream.class);
         
-        String sPathFileToSign = tmpDataPath() + File.separator + fileName;
-        final InputStream ipStream = filePart.getValueAs(InputStream.class);
-		writeToFile(ipStream, sPathFileToSign);
-
+        String sPathFileToSign = getFileToSignPath(ipFilename);
 		String sKeyFolder = getKeysPath();
 		String sPathDetachedSignature = getSigPath(sPathFileToSign);
 		log.info("Sig filepath: " + sPathDetachedSignature + " | Keys Path: " + sKeyFolder);
 
-		StreamingOutput stream =  new StreamingOutput(){
-
-			@Override
-			public void write(OutputStream out) throws IOException, WebApplicationException {
-				try {
-					GwKeyPairManager gwkpg = new GwKeyPairManager();
-					gwkpg.generateKeyPair();
-					try {
-						gwkpg.serializeKeyPair(sKeyFolder);
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					gwDS.generateDigitalSignature(sPathFileToSign, sPathDetachedSignature, gwkpg);
-					out.write(String.format("Signed file at: %s\n", sPathDetachedSignature).getBytes());
-					out.flush();
-				} catch(Exception e){
-					throw new WebApplicationException(e);
-				}
+		try {
+			writeToFile(ipStream, sPathFileToSign);
+			GwKeyPairManager gwkpg = new GwKeyPairManager();
+			gwkpg.generateKeyPair();
+			try {
+				gwkpg.serializeKeyPair(sKeyFolder);
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
-		};
-		return Response.ok(stream).build();
+			gwDS.generateDigitalSignature(sPathFileToSign, sPathDetachedSignature, gwkpg);
+		} catch(Exception e){
+			throw new WebApplicationException(e);
+		}
+
+		return Response.ok(new File(sPathDetachedSignature), MediaType.APPLICATION_OCTET_STREAM)
+	            .header("content-disposition", "attachment; filename = "+ FilenameUtils.getName(sPathDetachedSignature))
+	            .build();
 	}	
 	
 	@GET
