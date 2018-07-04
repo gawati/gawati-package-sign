@@ -76,7 +76,11 @@ public class GwSignAdapter {
 	}
 
 	private String getPublicKeyPath() {
-		return getKeysPath() + File.separator + "id.public";
+		return getKeysPath() + File.separator + "id.pub";
+	}
+
+	private String getPrivateKeyPath() {
+		return getKeysPath() + File.separator + "id.pri";
 	}
 
 	// Saves uploaded file to path
@@ -99,6 +103,14 @@ public class GwSignAdapter {
 		}
 	}
 	
+	/**
+	 * Sign the given document.
+	 * Post Params:
+	 * `input_file`: File to be signed
+	 * `public_key`: Public key file
+	 * `private_key`: Private key file
+	 * @throws IOException, WebApplicationException
+	 */
 	@POST
 	@Path("/sign")
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
@@ -108,23 +120,26 @@ public class GwSignAdapter {
 		ContentDisposition fileHeader = filePart.getContentDisposition();
 		String ipFilename = fileHeader.getFileName();
 		final InputStream ipStream = filePart.getValueAs(InputStream.class);
-        
+
+		FormDataBodyPart pubKey = formData.getField("public_key");
+		final InputStream pubKeyStream = pubKey.getValueAs(InputStream.class);
+		FormDataBodyPart priKey = formData.getField("private_key");
+		final InputStream priKeyStream = priKey.getValueAs(InputStream.class);
+
         String sPathFileToSign = getFileToSignPath(ipFilename);
-		String sKeyFolder = getKeysPath();
 		String sPathDetachedSignature = getSigPath(sPathFileToSign);
 		log.info("Sign: " + ipFilename);
 
 		try {
 			writeToFile(ipStream, sPathFileToSign);
+			writeToFile(pubKeyStream, getPublicKeyPath());
+			writeToFile(priKeyStream, getPrivateKeyPath());
+
 			GwKeyPairManager gwkpg = new GwKeyPairManager();
-			gwkpg.generateKeyPair();
-			try {
-				gwkpg.serializeKeyPair(sKeyFolder);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			gwkpg.loadKeyPair(getPrivateKeyPath(), getPublicKeyPath());
 			gwDS.generateDigitalSignature(sPathFileToSign, sPathDetachedSignature, gwkpg);
 		} catch(Exception e){
+			log.info("Sign Exception: " + e);
 			throw new WebApplicationException(e);
 		}
 
@@ -133,6 +148,13 @@ public class GwSignAdapter {
 	            .build();
 	}
 
+	/**
+	 * Validates a signed document.
+	 * Post Params:
+	 * `sig_file`: Signed file to be validated
+	 * `public_key`: Public key file
+	 * @throws IOException, WebApplicationException, JSONException
+	 */
 	@POST
 	@Path("/validate")
 	@Produces(MediaType.TEXT_PLAIN)
@@ -142,8 +164,10 @@ public class GwSignAdapter {
 		String sigFilename = sigFilePart.getContentDisposition().getFileName();
 		final InputStream sigStream = sigFilePart.getValueAs(InputStream.class);
 
+		FormDataBodyPart pubKey = formData.getField("public_key");
+		final InputStream pubKeyStream = pubKey.getValueAs(InputStream.class);
+
 		String sPathDetachedSignature = getSigPath(sigFilename);
-		String sPublicKey = getPublicKeyPath();
 		log.info("Validate: " + sigFilename);
 
 		JSONObject valid = new JSONObject();
@@ -151,10 +175,13 @@ public class GwSignAdapter {
 
 		try {
 			writeToFile(sigStream, sPathDetachedSignature);
-			boolean v = gwDS.validateDigitalSignature(sPathDetachedSignature, sPublicKey);
+			writeToFile(pubKeyStream, getPublicKeyPath());
+
+			boolean v = gwDS.validateDigitalSignature(sPathDetachedSignature, getPublicKeyPath());
 			log.info("Valid = " + v);
 			valid.put("valid", v);
 		} catch(Exception e){
+			log.info("Validate Exception: " + e);
 			throw new WebApplicationException(e);
 		}
 		return Response.ok(valid.toString()).build();
