@@ -113,7 +113,7 @@ public class GwSignAdapter {
 	 */
 	@POST
 	@Path("/sign")
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	@Produces(MediaType.TEXT_XML)
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response restApplySign(FormDataMultiPart formData) throws IOException, WebApplicationException {
 		FormDataBodyPart filePart = formData.getField("input_file");
