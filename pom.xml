@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.gawati.security.crypto</groupId>
   <artifactId>pkgsign</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>1.0.1</version>
   <packaging>war</packaging>
   <name>GawatiPackageSign</name>
   <build>
